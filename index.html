@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS - NID DATABASE পার্টনার পোর্টাল</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; background: #f4f6f9; min-height: 100vh; }
+        .header { background: #0b5ed7; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .logo { width: 50px; margin-right: 10px; }
+        .container { display: flex; flex-direction: row; min-height: calc(100vh - 60px); }
+        .sidebar { width: 220px; background: #fff; border-right: 1px solid #ddd; }
+        .sidebar ul { list-style: none; }
+        .sidebar ul li a { display: block; padding: 12px; text-decoration: none; color: #000; cursor: pointer; }
+        .sidebar ul li a:hover { background: #f0f0f0; }
+        .content { flex: 1; padding: 20px; }
+        .box { background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-control { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn { padding: 10px 20px; background: #0b5ed7; border: none; color: white; cursor: pointer; border-radius: 5px; font-size: 16px; }
+        .btn:hover { background: #0949a5; }
+        #loginContainer, #otpContainer { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        #loginForm, #otpForm, #registerForm { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.15); width: 100%; max-width: 400px; text-align: center; }
+        #message, #otpMessage, #regMessage { margin-top: 15px; font-weight: bold; min-height: 22px; }
+        .success { color: green; }
+        .error { color: red; }
+        #dashboard { display: none; }
+        
+        #loadingOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); z-index: 9999;
+            justify-content: center; align-items: center;
+        }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0b5ed7; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { margin-top: 15px; color: white; font-size: 18px; }
+
+        #accessMessage { color: red; font-weight: bold; margin-top: 20px; text-align: center; }
+        .back-btn { margin-bottom: 15px; width: auto; }
+        .result-box { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
+        .pdf-card { margin-top: 15px; padding: 14px; border: 1px solid #cfd8dc; border-radius: 8px; background: #fff; }
+        .pdf-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #0b5ed7; }
+        
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
+            .header { font-size: 18px; padding: 12px; flex-direction: column; gap: 10px; }
+            .logo { width: 40px; }
+            .form-control, .btn { font-size: 16px; padding: 12px; }
+            #loginForm, #otpForm, #registerForm { padding: 25px 15px; max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- লগইন / রেজিস্টার -->
+    <div id="loginContainer">
+        <div>
+            <form id="loginForm">
+                <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Election_Commission_Logo.svg" alt="লোগো">
+                <h3>CMS - NID DATABASE পার্টনার পোর্টাল</h3>
+                <input type="text" id="userid" class="form-control" placeholder="ইউজার আইডি" required>
+                <input type="password" id="password" class="form-control" placeholder="পাসওয়ার্ড" required>
+                <button type="submit" class="btn">লগইন</button>
+                <p style="margin-top:15px;">অ্যাকাউন্ট নেই? <a href="#" id="showRegister">রেজিস্টার করুন</a></p>
+                <div id="message"></div>
+            </form>
+
+            <form id="registerForm" style="display:none;">
+                <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Election_Commission_Logo.svg" alt="লোগো">
+                <h3>রেজিস্ট্রেশন</h3>
+                <input type="text" id="regUserid" class="form-control" placeholder="ইউজার আইডি" required>
+                <input type="password" id="regPassword" class="form-control" placeholder="পাসওয়ার্ড" required>
+                <button type="submit" class="btn">রেজিস্টার</button>
+                <p style="margin-top:15px;"><a href="#" id="showLogin">লগইন পেজে ফিরুন</a></p>
+                <div id="regMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- OTP -->
+    <div id="otpContainer" style="display:none;">
+        <form id="otpForm">
+            <h3>OTP যাচাই</h3>
+            <input type="tel" id="mobileNumber" class="form-control" placeholder="রেজিস্টারকৃত মোবাইল নাম্বার" maxlength="11" inputmode="numeric">
+            <button type="button" id="requestOtpBtn" class="btn" style="margin-bottom:10px;background:#28a745;">OTP পাঠান</button>
+            <p style="margin:10px 0 15px 0;font-size:14px;color:#555;text-align:left;">
+                রেজিস্টারকৃত মোবাইল নাম্বার দিয়ে সাবমিট করুন, এবং ৩০ সেকেন্ডের মধ্যে ওটিপি না পেলে পূনরায় আবার সাবমিট করুন
+            </p>
+            <input type="text" id="otp" class="form-control" placeholder="OTP দিন" maxlength="6" inputmode="numeric" autocomplete="one-time-code" required>
+            <button type="submit" class="btn">সাবমিট</button>
+            <div id="otpMessage"></div>
+        </form>
+    </div>
+
+    <!-- লোডিং -->
+    <div id="loadingOverlay">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <div class="loading-text">প্রক্রিয়া চলছে...</div>
+        </div>
+    </div>
+
+    <!-- ড্যাশবোর্ড -->
+    <div id="dashboard">
+        <div class="header">
+            <div style="display: flex; align-items: center;">
+                <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Election_Commission_Logo.svg" alt="লোগো">
+                <span>CMS - NID DATABASE পার্টনার পোর্টাল</span>
+            </div>
+            <button class="btn" onclick="logout()">লগআউট</button>
+        </div>
+        <div class="container">
+            <div class="sidebar">
+                <ul>
+                    <li><a onclick="showForm('nid')">এনআইডি সার্চ</a></li>
+                    <li><a onclick="showForm('mobile')">মোবাইল সার্চ</a></li>
+                    <li><a onclick="showForm('birth')">জন্ম নিবন্ধন সার্চ</a></li>
+                    <li><a onclick="showForm('formno')">ফর্ম নাম্বার</a></li>
+                    <li><a onclick="showForm('correction')">সংশোধন অনুমোদন</a></li>
+                </ul>
+            </div>
+            <div class="content">
+                <div class="box" id="formArea">
+                    <h3>একটি অপশন নির্বাচন করুন</h3>
+                </div>
+                <div id="accessMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let generatedOtp = "";
+        let otpMobile = "";
+        let otpExpiresAt = 0;
+
+        function showLoading() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoading() { document.getElementById("loadingOverlay").style.display = "none"; }
+
+        // Register & Login
+        document.getElementById("showRegister").addEventListener("click", e => { e.preventDefault(); document.getElementById("loginForm").style.display = "none"; document.getElementById("registerForm").style.display = "block"; });
+        document.getElementById("showLogin").addEventListener("click", e => { e.preventDefault(); document.getElementById("registerForm").style.display = "none"; document.getElementById("loginForm").style.display = "block"; });
+
+        document.getElementById("registerForm").addEventListener("submit", e => {
+            e.preventDefault();
+            const user = document.getElementById("regUserid").value.trim();
+            const pass = document.getElementById("regPassword").value.trim();
+            const regMsg = document.getElementById("regMessage");
+            if (!user || !pass) return;
+            const existing = localStorage.getItem("ecUser");
+            if (existing) {
+                regMsg.innerHTML = `<button onclick="resetAccount()" class="btn" style="background:#dc3545;margin-top:10px;">পুরানো অ্যাকাউন্ট মুছে নতুন রেজিস্টার করুন</button>`;
+                regMsg.className = "error";
+                return;
+            }
+            localStorage.setItem("ecUser", JSON.stringify({ userid: user, password: pass }));
+            regMsg.innerHTML = `<span class="success">রেজিস্ট্রেশন সফল হয়েছে। লগইন পেজে ফিরে যাচ্ছি...</span>`;
+            setTimeout(() => {
+                document.getElementById("registerForm").style.display = "none";
+                document.getElementById("loginForm").style.display = "block";
+                regMsg.innerHTML = "";
+            }, 1500);
+        });
+
+        window.resetAccount = function() { localStorage.removeItem("ecUser"); location.reload(); };
+
+        document.getElementById("loginForm").addEventListener("submit", e => {
+            e.preventDefault();
+            const user = document.getElementById("userid").value.trim();
+            const pass = document.getElementById("password").value.trim();
+            const stored = JSON.parse(localStorage.getItem("ecUser"));
+            if (!stored || stored.userid !== user || stored.password !== pass) {
+                document.getElementById("message").innerHTML = `<span class="error">ইউজার আইডি অথবা পাসওয়ার্ড ভুল।</span>`;
+                return;
+            }
+            document.getElementById("message").innerHTML = "";
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                document.getElementById("loginContainer").style.display = "none";
+                document.getElementById("otpContainer").style.display = "flex";
+            }, 1500);
+        });
+
+        let lastOtpRequestTime = 0;
+        const COOLDOWN_TIME = 30000;
+
+        async function sendOtpByApi(mobile) {
+            const response = await fetch("/api/send-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: mobile })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) throw new Error(data.message || "OTP পাঠানো যায়নি");
+            return data;   // ← এখান থেকে server এর OTP পাওয়া যাবে
+        }
+
+        document.getElementById("requestOtpBtn").addEventListener("click", async () => {
+            const mobile = document.getElementById("mobileNumber").value.trim();
+            const otpMsg = document.getElementById("otpMessage");
+
+            if (!/^01\d{9}$/.test(mobile)) {
+                otpMsg.innerHTML = `<span class="error">সঠিক মোবাইল নাম্বার দিন (০১XXXXXXXXX)</span>`;
+                return;
+            }
+
+            if (Date.now() - lastOtpRequestTime < COOLDOWN_TIME) {
+                otpMsg.innerHTML = `<span class="error">৩০ সেকেন্ড পর আবার চেষ্টা করুন</span>`;
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const data = await sendOtpByApi(mobile);
+                
+                generatedOtp = data.otp;           // ← সার্ভার থেকে আসা আসল OTP
+                otpMobile = mobile;
+                otpExpiresAt = Date.now() + (5 * 60 * 1000);
+                lastOtpRequestTime = Date.now();
+
+                otpMsg.innerHTML = `<span class="success">OTP সফলভাবে পাঠানো হয়েছে।</span>`;
+            } catch (error) {
+                otpMsg.innerHTML = `<span class="error">OTP পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।</span>`;
+            } finally {
+                hideLoading();
+                setTimeout(() => { document.getElementById("requestOtpBtn").disabled = false; }, 3000);
+            }
+        });
+
+        // OTP সাবমিট (সঠিকভাবে চেক করা)
+        document.getElementById("otpForm").addEventListener("submit", e => {
+            e.preventDefault();
+            const enteredOtp = document.getElementById("otp").value.trim();
+            const otpMsg = document.getElementById("otpMessage");
+
+            otpMsg.innerHTML = "";
+
+            if (!generatedOtp) {
+                otpMsg.innerHTML = `<span class="error">প্রথমে OTP পাঠান</span>`;
+                return;
+            }
+            if (Date.now() > otpExpiresAt) {
+                otpMsg.innerHTML = `<span class="error">OTP এর মেয়াদ শেষ হয়ে গেছে। আবার OTP পাঠান</span>`;
+                return;
+            }
+
+            if (enteredOtp === generatedOtp) {
+                otpMsg.innerHTML = `<span class="success">OTP যাচাই সফল হয়েছে। ড্যাশবোর্ডে যাচ্ছি...</span>`;
+                showLoading();
+
+                setTimeout(() => {
+                    hideLoading();
+                    generatedOtp = "";
+                    otpMobile = "";
+                    otpExpiresAt = 0;
+
+                    document.getElementById("otpContainer").style.display = "none";
+                    document.getElementById("dashboard").style.display = "block";
+                }, 1500);
+            } else {
+                otpMsg.innerHTML = `<span class="error">OTP ভুল হয়েছে। আবার চেষ্টা করুন।</span>`;
+            }
+        });
+
+        function logout() { location.reload(); }
+
+        function showForm(type) {
+            document.getElementById("accessMessage").innerHTML = "";
+            let title = "", fields = "";
+
+            if (type === "nid") {
+                title = "এনআইডি সার্চ";
+                fields = `<input type="text" id="nidInput" class="form-control" placeholder="এনআইডি নাম্বার"><select id="nidType" class="form-control"><option value="ServerCopy">সার্ভার কপি</option><option value="SignCopy">সাইন কপি</option></select>`;
+            } else if (type === "mobile") {
+                title = "মোবাইল সার্চ";
+                fields = `<input type="text" id="mobileInput" class="form-control" placeholder="মোবাইল নাম্বার">`;
+            } else if (type === "birth") {
+                title = "জন্ম নিবন্ধন সার্চ";
+                fields = `<input type="text" id="birthInput" class="form-control" placeholder="জন্ম নিবন্ধন নাম্বার">`;
+            } else if (type === "formno") {
+                title = "ফর্ম নাম্বার";
+                fields = `<input type="text" id="formnoInput" class="form-control" placeholder="ফর্ম নাম্বার">`;
+            } else if (type === "correction") {
+                title = "সংশোধন অনুমোদন";
+                fields = `<input type="text" id="correctionInput" class="form-control" placeholder="জাতীয় পরিচয় পত্র নাম্বার / আবেদন কপি নাম্বার">`;
+            }
+
+            const html = `<button class="btn back-btn" onclick="backToDefault()">ফিরে যান</button><h3>${title}</h3>${fields}<button class="btn" onclick="search('${type}')">সার্চ</button><div id="resultArea"></div>`;
+            document.getElementById("formArea").innerHTML = html;
+        }
+
+        function backToDefault() {
+            document.getElementById("formArea").innerHTML = "<h3>একটি অপশন নির্বাচন করুন</h3>";
+            document.getElementById("accessMessage").innerHTML = "";
+        }
+
+        function search(type) {
+            let inputVal = "";
+            if (type === "nid") inputVal = document.getElementById("nidInput").value.trim();
+            else if (type === "mobile") inputVal = document.getElementById("mobileInput").value.trim();
+            else if (type === "birth") inputVal = document.getElementById("birthInput").value.trim();
+            else if (type === "formno") inputVal = document.getElementById("formnoInput").value.trim();
+            else if (type === "correction") inputVal = document.getElementById("correctionInput").value.trim();
+
+            if (!inputVal) { alert("অনুসন্ধানের জন্য তথ্য দিন"); return; }
+
+            let filename = "";
+            if (type === "nid") filename = `NID_${inputVal}.pdf`;
+            else if (type === "mobile") filename = `Mobile_${inputVal}.pdf`;
+            else if (type === "birth") filename = `Birth_${inputVal}.pdf`;
+            else if (type === "formno") filename = `Form_${inputVal}.pdf`;
+            else if (type === "correction") filename = `Correction_${inputVal}.pdf`;
+
+            document.getElementById("resultArea").innerHTML = `
+                <div class="result-box">
+                    <h4>রেজাল্ট পাওয়া গেছে</h4>
+                    <div class="pdf-card">
+                        <div class="pdf-title">${filename}</div>
+                        <p>PDF প্রস্তুত আছে।</p>
+                        <button class="btn" onclick="attemptDownload()">ডাউনলোড</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attemptDownload() {
+            document.getElementById("accessMessage").innerHTML = `
+                <div style="color: red; font-weight: bold; padding: 15px; border: 1px solid #f5c6cb; background: #f8d7da; border-radius: 8px;">
+                   প্রিয় ব্যবহারকারী আপনি পোর্টাল এক্সেস -২ রেজিষ্ট্রেশন করেছেন, তাই প্রথম রিচার্জ ৪৮০ সম্পুর্ন করা বাধ্যতামূলক, অনুগ্রহ করে রিচার্জ সম্পুর্ন করে পোর্টাল ব্যবহার করুন । ধন্যবাদ, (বাংলাদেশ নির্বাচন কমিশন সচিবালয়)।
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
