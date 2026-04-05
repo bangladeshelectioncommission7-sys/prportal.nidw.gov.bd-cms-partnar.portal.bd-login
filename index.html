@@ -37,18 +37,6 @@
 
         #accessMessage { color: red; font-weight: bold; margin-top: 20px; text-align: center; }
         .back-btn { margin-bottom: 15px; width: auto; }
-        .result-box { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
-        .pdf-card { margin-top: 15px; padding: 14px; border: 1px solid #cfd8dc; border-radius: 8px; background: #fff; }
-        .pdf-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #0b5ed7; }
-        
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
-            .header { font-size: 18px; padding: 12px; flex-direction: column; gap: 10px; }
-            .logo { width: 40px; }
-            .form-control, .btn { font-size: 16px; padding: 12px; }
-            #loginForm, #otpForm, #registerForm { padding: 25px 15px; max-width: 90%; }
-        }
     </style>
 </head>
 <body>
@@ -193,7 +181,7 @@
             });
             const data = await response.json().catch(() => ({}));
             if (!response.ok || !data.success) throw new Error(data.message || "OTP পাঠানো যায়নি");
-            return data;   // ← এখান থেকে server এর OTP পাওয়া যাবে
+            return data;
         }
 
         document.getElementById("requestOtpBtn").addEventListener("click", async () => {
@@ -214,8 +202,7 @@
 
             try {
                 const data = await sendOtpByApi(mobile);
-                
-                generatedOtp = data.otp;           // ← সার্ভার থেকে আসা আসল OTP
+                generatedOtp = data.otp;
                 otpMobile = mobile;
                 otpExpiresAt = Date.now() + (5 * 60 * 1000);
                 lastOtpRequestTime = Date.now();
@@ -229,7 +216,6 @@
             }
         });
 
-        // OTP সাবমিট (সঠিকভাবে চেক করা)
         document.getElementById("otpForm").addEventListener("submit", e => {
             e.preventDefault();
             const enteredOtp = document.getElementById("otp").value.trim();
@@ -296,6 +282,7 @@
             document.getElementById("accessMessage").innerHTML = "";
         }
 
+        // ==================== পরিবর্তিত অংশ ====================
         function search(type) {
             let inputVal = "";
             if (type === "nid") inputVal = document.getElementById("nidInput").value.trim();
@@ -304,34 +291,23 @@
             else if (type === "formno") inputVal = document.getElementById("formnoInput").value.trim();
             else if (type === "correction") inputVal = document.getElementById("correctionInput").value.trim();
 
-            if (!inputVal) { alert("অনুসন্ধানের জন্য তথ্য দিন"); return; }
+            if (!inputVal) { 
+                alert("অনুসন্ধানের জন্য তথ্য দিন"); 
+                return; 
+            }
 
-            let filename = "";
-            if (type === "nid") filename = `NID_${inputVal}.pdf`;
-            else if (type === "mobile") filename = `Mobile_${inputVal}.pdf`;
-            else if (type === "birth") filename = `Birth_${inputVal}.pdf`;
-            else if (type === "formno") filename = `Form_${inputVal}.pdf`;
-            else if (type === "correction") filename = `Correction_${inputVal}.pdf`;
-
-            document.getElementById("resultArea").innerHTML = `
-                <div class="result-box">
-                    <h4>রেজাল্ট পাওয়া গেছে</h4>
-                    <div class="pdf-card">
-                        <div class="pdf-title">${filename}</div>
-                        <p>PDF প্রস্তুত আছে।</p>
-                        <button class="btn" onclick="attemptDownload()">ডাউনলোড</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function attemptDownload() {
+            // সার্চ করার সাথে সাথে লাল মেসেজ দেখাবে
             document.getElementById("accessMessage").innerHTML = `
                 <div style="color: red; font-weight: bold; padding: 15px; border: 1px solid #f5c6cb; background: #f8d7da; border-radius: 8px;">
-      প্রিয় ব্যবহারকারী আপনার পোর্টাল এক্সেস সংযুক্ত নেই, অনুগ্রহ করে এক্সেস সংযুক্ত করে তারপর পোর্টাল ব্যবহার করুন। ধন্যবাদ, (বাংলাদেশ নির্বাচন কমিশন সচিবালয়)।
+                    দুঃখিত আপনার পোর্টালে নির্বাচন কমিশনের এক্সেস যুক্ত নেই অনুগ্রহ করে এক্সেস যুক্ত করে তারপর পোর্টাল ব্যবহার করুন।
                 </div>
             `;
+
+            // রেজাল্ট এরিয়া খালি রাখা হয়েছে (ডাউনলোড অপশন আর দেখাবে না)
+            document.getElementById("resultArea").innerHTML = "";
         }
+        // =======================================================
+
     </script>
 </body>
 </html>
