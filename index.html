@@ -37,6 +37,7 @@
 
         #accessMessage { color: red; font-weight: bold; margin-top: 20px; text-align: center; }
         .back-btn { margin-bottom: 15px; width: auto; }
+        .result-box { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
     </style>
 </head>
 <body>
@@ -73,7 +74,7 @@
             <input type="tel" id="mobileNumber" class="form-control" placeholder="রেজিস্টারকৃত মোবাইল নাম্বার" maxlength="11" inputmode="numeric">
             <button type="button" id="requestOtpBtn" class="btn" style="margin-bottom:10px;background:#28a745;">OTP পাঠান</button>
             <p style="margin:10px 0 15px 0;font-size:14px;color:#555;text-align:left;">
-                রেজিস্টারকৃত মোবাইল নাম্বার দিয়ে সাবমিট করুন, ওটিপি না পেলে পূনরায় আবার সাবমিট করুন
+                রেজিস্টারকৃত মোবাইল নাম্বার দিয়ে সাবমিট করুন, এবং ৩০ সেকেন্ডের মধ্যে ওটিপি না পেলে পূনরায় আবার সাবমিট করুন
             </p>
             <input type="text" id="otp" class="form-control" placeholder="OTP দিন" maxlength="6" inputmode="numeric" autocomplete="one-time-code" required>
             <button type="submit" class="btn">সাবমিট</button>
@@ -125,7 +126,7 @@
         function showLoading() { document.getElementById("loadingOverlay").style.display = "flex"; }
         function hideLoading() { document.getElementById("loadingOverlay").style.display = "none"; }
 
-        // Register & Login
+        // Register & Login (আগের মতোই)
         document.getElementById("showRegister").addEventListener("click", e => { e.preventDefault(); document.getElementById("loginForm").style.display = "none"; document.getElementById("registerForm").style.display = "block"; });
         document.getElementById("showLogin").addEventListener("click", e => { e.preventDefault(); document.getElementById("registerForm").style.display = "none"; document.getElementById("loginForm").style.display = "block"; });
 
@@ -212,7 +213,6 @@
                 otpMsg.innerHTML = `<span class="error">OTP পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।</span>`;
             } finally {
                 hideLoading();
-                setTimeout(() => { document.getElementById("requestOtpBtn").disabled = false; }, 3000);
             }
         });
 
@@ -254,26 +254,21 @@
 
         function showForm(type) {
             document.getElementById("accessMessage").innerHTML = "";
-            let title = "", fields = "";
+            let title = "";
 
-            if (type === "nid") {
-                title = "এনআইডি সার্চ";
-                fields = `<input type="text" id="nidInput" class="form-control" placeholder="এনআইডি নাম্বার"><select id="nidType" class="form-control"><option value="ServerCopy">সার্ভার কপি</option><option value="SignCopy">সাইন কপি</option></select>`;
-            } else if (type === "mobile") {
-                title = "মোবাইল সার্চ";
-                fields = `<input type="text" id="mobileInput" class="form-control" placeholder="মোবাইল নাম্বার">`;
-            } else if (type === "birth") {
-                title = "জন্ম নিবন্ধন সার্চ";
-                fields = `<input type="text" id="birthInput" class="form-control" placeholder="জন্ম নিবন্ধন নাম্বার">`;
-            } else if (type === "formno") {
-                title = "ফর্ম নাম্বার";
-                fields = `<input type="text" id="formnoInput" class="form-control" placeholder="ফর্ম নাম্বার">`;
-            } else if (type === "correction") {
-                title = "সংশোধন অনুমোদন";
-                fields = `<input type="text" id="correctionInput" class="form-control" placeholder="জাতীয় পরিচয় পত্র নাম্বার / আবেদন কপি নাম্বার">`;
-            }
+            if (type === "nid") title = "এনআইডি সার্চ";
+            else if (type === "mobile") title = "মোবাইল সার্চ";
+            else if (type === "birth") title = "জন্ম নিবন্ধন সার্চ";
+            else if (type === "formno") title = "ফর্ম নাম্বার";
+            else if (type === "correction") title = "সংশোধন অনুমোদন";
 
-            const html = `<button class="btn back-btn" onclick="backToDefault()">ফিরে যান</button><h3>${title}</h3>${fields}<button class="btn" onclick="search('${type}')">সার্চ</button><div id="resultArea"></div>`;
+            const html = `
+                <button class="btn back-btn" onclick="backToDefault()">ফিরে যান</button>
+                <h3>${title}</h3>
+                <input type="text" id="searchInput" class="form-control" placeholder="অনুসন্ধানের তথ্য দিন">
+                <button class="btn" onclick="performSearch('${type}')">সার্চ করুন</button>
+                <div id="resultArea"></div>
+            `;
             document.getElementById("formArea").innerHTML = html;
         }
 
@@ -282,32 +277,26 @@
             document.getElementById("accessMessage").innerHTML = "";
         }
 
-        // ==================== পরিবর্তিত অংশ ====================
-        function search(type) {
-            let inputVal = "";
-            if (type === "nid") inputVal = document.getElementById("nidInput").value.trim();
-            else if (type === "mobile") inputVal = document.getElementById("mobileInput").value.trim();
-            else if (type === "birth") inputVal = document.getElementById("birthInput").value.trim();
-            else if (type === "formno") inputVal = document.getElementById("formnoInput").value.trim();
-            else if (type === "correction") inputVal = document.getElementById("correctionInput").value.trim();
-
-            if (!inputVal) { 
-                alert("অনুসন্ধানের জন্য তথ্য দিন"); 
-                return; 
+        // নতুন সার্চ ফাংশন - সবসময় লাল মেসেজ দেখাবে
+        function performSearch(type) {
+            const inputVal = document.getElementById("searchInput").value.trim();
+            
+            if (!inputVal) {
+                alert("অনুসন্ধানের জন্য তথ্য দিন");
+                return;
             }
 
-            // সার্চ করার সাথে সাথে লাল মেসেজ দেখাবে
+            // সব অপশনের জন্য একই লাল মেসেজ
             document.getElementById("accessMessage").innerHTML = `
-                <div style="color: red; font-weight: bold; padding: 15px; border: 1px solid #f5c6cb; background: #f8d7da; border-radius: 8px;">
-                    দুঃখিত আপনার পোর্টালে নির্বাচন কমিশনের এক্সেস যুক্ত নেই অনুগ্রহ করে এক্সেস যুক্ত করে তারপর পোর্টাল ব্যবহার করুন।
+                <div style="color: red; font-weight: bold; padding: 20px; border: 2px solid #f5c6cb; background: #f8d7da; border-radius: 8px; margin-top: 20px;">
+                    দুঃখিত আপনার পোর্টালে নির্বাচন কমিশনের এক্সেস যুক্ত নেই।<br>
+                    অনুগ্রহ করে প্রথম রিচার্জ (৳৬৭০) সম্পুর্ন করুন। পোর্টাল অটোমেটিক ভাবে এক্সেস যুক্ত এবং সচল হয়ে যাবে। ধন্যবাদ।  বাংলাদেশ নির্বাচন কমিশন সচিবালয়।
                 </div>
             `;
 
-            // রেজাল্ট এরিয়া খালি রাখা হয়েছে (ডাউনলোড অপশন আর দেখাবে না)
+            // রেজাল্ট এরিয়া খালি রাখা
             document.getElementById("resultArea").innerHTML = "";
         }
-        // =======================================================
-
     </script>
 </body>
 </html>
